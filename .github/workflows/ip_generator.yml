@@ -1,0 +1,74 @@
+name: IPOptimizer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: '30 20 * * *'
+    - cron: '30 6 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -e {0}
+    env:
+      HOSTMONIT_API_KEY: ${{ secrets.HOSTMONIT_API_KEY }}
+      LIST_DIR: /tmp/list
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+
+      - name: Create temporary list directory
+        run: mkdir -p /tmp/list
+
+      - name: Execute PHP script
+        run: php scripts/fetch_ips.php
+        env:
+          LIST_DIR: /tmp/list
+
+      - name: Get Current Date and Time
+        id: date
+        run: echo "CURRENT_DATE=$(TZ='Asia/Tehran' date '+%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
+
+      - name: Create or Update Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: latest-ipoptimizer
+          name: "IPOptimizer Update - ${{ steps.date.outputs.CURRENT_DATE }}"
+          body: "Automated update with optimized IPs at ${{ steps.date.outputs.CURRENT_DATE }} (IRST)"
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: |
+            /tmp/list/ipv4.json
+            /tmp/list/ipv6.json
+            /tmp/list/export.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "ircfspace@gmail.com"
+          git config --global user.name "ircfspace"
+
+      - name: Commit README changes
+        run: |
+          git add README.md
+          git diff --cached --quiet || git commit -m "♻️ Update README - ${{ steps.date.outputs.CURRENT_DATE }}"
+
+      - name: Push README changes
+        uses: ad-m/github-push-action@v1.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
