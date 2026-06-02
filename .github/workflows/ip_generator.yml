@@ -1,6 +1,5 @@
 name: IPOptimizer
 
-# ====================== Permissions (حل مشکل 403) ======================
 permissions:
   contents: write
 
