@@ -1,5 +1,9 @@
 name: IPOptimizer
 
+# ====================== Permissions (حل مشکل 403) ======================
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -21,8 +25,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
